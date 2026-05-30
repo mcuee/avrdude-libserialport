@@ -15,7 +15,7 @@ add_compile_definitions(
 
 add_compile_definitions(LOG_APPNAME="avrdude")
 
-add_library(libusb STATIC
+add_library(libserialport STATIC
     src/serialport.c
     src/timing.c
     src/windows.c
