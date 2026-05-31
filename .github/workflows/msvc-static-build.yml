@@ -1,11 +1,6 @@
 name: MSVC Static Build CI
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  workflow_dispatch:
+on: [push, pull_request]
 
 jobs:
   build-windows:
