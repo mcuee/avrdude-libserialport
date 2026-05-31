@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Configure CMake
         run: |
@@ -40,7 +40,7 @@ jobs:
           Copy-Item "include/libserialport.h" -Destination "dist/${{ matrix.arch }}/"
 
       - name: Upload Static Build Artifacts
-        uses: actions/artifacts@v4
+        uses: actions/upload-artifact@v7
         with:
           name: libserialport-msvc-static-${{ matrix.arch }}
           path: dist/${{ matrix.arch }}/
