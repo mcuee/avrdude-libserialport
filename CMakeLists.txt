@@ -7,7 +7,7 @@
 cmake_minimum_required(VERSION 3.12)
 project(libserialport C)
 
-add_library(libserialport
+add_library(libserialport STATIC
     src/serialport.c
     src/timing.c
     src/windows.c
@@ -15,29 +15,30 @@ add_library(libserialport
 
 target_include_directories(libserialport PUBLIC include)
 
-# Internal private definitions needed strictly to compile the library source files
+# Internal private definitions needed strictly to compile the library source files.
+# We removed _CRT_SECURE_NO_WARNINGS here because the library header already defines it internally.
 target_compile_definitions(libserialport PRIVATE 
-    _CRT_SECURE_NO_WARNINGS=1
     SP_PRIV=
     LOG_APPNAME="avrdude"
 )
 
-# Windows specific target handling (fixes standalone vs sub-project builds)
 if(WIN32)
-    # Automatically links setupapi and cfgmgr32 dependencies natively
+    # Link system libraries required by the Windows backend natively
     target_link_libraries(libserialport PRIVATE setupapi cfgmgr32)
 
     if(BUILD_SHARED_LIBS)
-        # Shared Build: exports symbols during build, drops them for consumers
         target_compile_definitions(libserialport PRIVATE LIBSERIALPORT_MSBUILD=1)
     else()
-        # Static Build: Forces the header to strip __declspec(dllimport) everywhere!
-        # This fixes BOTH your standalone GitHub Action workflow AND the parent avrdude SWIG build.
+        # Static Build target definitions
         target_compile_definitions(libserialport PUBLIC LIBSERIALPORT_MSBUILD=1 SP_API=)
     endif()
 endif()
 
-# MSVC specific compiler warning suppression
+# MSVC tuning for a completely silent, warning-free log
 if(MSVC)
-    target_compile_options(libserialport PRIVATE /wd4996 /wd5105)
+    target_compile_options(libserialport PRIVATE 
+        /wd4005 # Suppress warning C4005: macro redefinition (from duplicate command line vs header definitions)
+        /wd4996 # Suppress warning C4996: 'POSIX name' / deprecated declarations
+        /wd5105 # Suppress warning C5105: macro expansion producing 'defined' has undefined behavior
+    )
 endif()
