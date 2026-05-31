@@ -7,8 +7,7 @@
 cmake_minimum_required(VERSION 3.12)
 project(libserialport C)
 
-# Use target-scoped definitions rather than directory-wide add_compile_definitions
-add_library(libserialport STATIC
+add_library(libserialport
     src/serialport.c
     src/timing.c
     src/windows.c
@@ -22,6 +21,21 @@ target_compile_definitions(libserialport PRIVATE
     SP_PRIV=
     LOG_APPNAME="avrdude"
 )
+
+# Windows specific target handling (fixes standalone vs sub-project builds)
+if(WIN32)
+    # Automatically links setupapi and cfgmgr32 dependencies natively
+    target_link_libraries(libserialport PRIVATE setupapi cfgmgr32)
+
+    if(BUILD_SHARED_LIBS)
+        # Shared Build: exports symbols during build, drops them for consumers
+        target_compile_definitions(libserialport PRIVATE LIBSERIALPORT_MSBUILD=1)
+    else()
+        # Static Build: Forces the header to strip __declspec(dllimport) everywhere!
+        # This fixes BOTH your standalone GitHub Action workflow AND the parent avrdude SWIG build.
+        target_compile_definitions(libserialport PUBLIC LIBSERIALPORT_MSBUILD=1 SP_API=)
+    endif()
+endif()
 
 # MSVC specific compiler warning suppression
 if(MSVC)
