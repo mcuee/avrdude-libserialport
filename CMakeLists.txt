@@ -34,11 +34,14 @@ if(WIN32)
     endif()
 endif()
 
-# MSVC tuning for a completely silent, warning-free log
+# MSVC tuning - Using PUBLIC ensures downstream targets (like avrdude) 
+# are also kept clean and warning-free!
 if(MSVC)
-    target_compile_options(libserialport PRIVATE 
-        /wd4005 # Suppress warning C4005: macro redefinition (from duplicate command line vs header definitions)
-        /wd4996 # Suppress warning C4996: 'POSIX name' / deprecated declarations
-        /wd5105 # Suppress warning C5105: macro expansion producing 'defined' has undefined behavior
+    target_compile_options(libserialport PUBLIC 
+        /wd4005 # Suppress warning C4005: macro redefinition
+    )
+    target_compile_options(libserialport PRIVATE
+        /wd4996 # Suppress warning C4996: deprecated POSIX names
+        /wd5105 # Suppress warning C5105: macro expansion undefined behavior
     )
 endif()
