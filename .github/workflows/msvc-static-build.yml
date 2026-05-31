@@ -1,0 +1,52 @@
+name: MSVC Static Build CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    name: Build MSVC Static (${{ matrix.arch }})
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        # Added ARM64 alongside Win32 (x86) and x64
+        arch: [x64, Win32, ARM64]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: |
+          cmake -B build `
+                -A ${{ matrix.arch }} `
+                -D CMAKE_BUILD_TYPE=RelWithDebInfo `
+                -D BUILD_SHARED_LIBS=OFF
+
+      - name: Build Library
+        run: |
+          cmake --build build --config RelWithDebInfo --parallel
+
+      - name: Stage Artifacts
+        shell: pwsh
+        run: |
+          # Create a structured directory for clean artifact collection
+          New-Item -ItemType Directory -Force -Path "dist/${{ matrix.arch }}"
+          
+          # Copy the compiled static library
+          Copy-Item "build/RelWithDebInfo/libserialport.lib" -Destination "dist/${{ matrix.arch }}/"
+          
+          # Copy the public header interface files
+          Copy-Item "include/libserialport.h" -Destination "dist/${{ matrix.arch }}/"
+
+      - name: Upload Static Build Artifacts
+        uses: actions/artifacts@v4
+        with:
+          name: libserialport-msvc-static-${{ matrix.arch }}
+          path: dist/${{ matrix.arch }}/
+          if-no-files-found: error
